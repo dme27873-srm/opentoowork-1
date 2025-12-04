@@ -3,30 +3,43 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import CandidateDashboard from "@/components/CandidateDashboard";
-// Employer removed for now to avoid loading blocking
+import EmployerDashboard from "@/components/EmployerDashboard";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [checking, setChecking] = useState(true);
-  const [loggedIn, setLoggedIn] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<"candidate" | "employer" | null>(null);
 
   useEffect(() => {
-    checkAuth();
+    checkUser();
   }, []);
 
-  const checkAuth = async () => {
+  const checkUser = async () => {
     const { data: { session } } = await supabase.auth.getSession();
 
     if (!session) {
-      navigate("/candidate/auth");  // Redirect if not logged in
+      navigate("/candidate/auth");
       return;
     }
 
-    setLoggedIn(true);
-    setChecking(false);
+    // Fetch the user's role from the 'profiles' table
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", session.user.id)
+      .single();
+
+    if (error || !profile) {
+      console.error("Error fetching profile:", error);
+      // Optional: Handle error (e.g., logout or show error)
+    } else {
+      setUserRole(profile.role);
+    }
+    
+    setLoading(false);
   };
 
-  if (checking) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p>Loading...</p>
@@ -37,7 +50,10 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      {loggedIn && <CandidateDashboard />}
+      <div className="container mx-auto py-6">
+        {userRole === "candidate" && <CandidateDashboard />}
+        {userRole === "employer" && <EmployerDashboard />}
+      </div>
     </div>
   );
 };

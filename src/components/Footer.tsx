@@ -13,7 +13,7 @@ const Footer = () => {
                 <Briefcase className="h-6 w-6 text-primary-foreground" />
               </div>
               <span className="font-bold text-xl bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                OPEN TO WORK
+                OPENTOOWORK
               </span>
             </Link>
             <p className="text-muted-foreground text-sm">
@@ -108,7 +108,7 @@ const Footer = () => {
         {/* Copyright */}
         <div className="pt-8 border-t border-border/50 text-center">
           <p className="text-muted-foreground text-sm">
-            © {new Date().getFullYear()} OPEN TO WORK. All rights reserved.
+            © {new Date().getFullYear()} OPENTOOWORK. All rights reserved.
           </p>
         </div>
       </div>

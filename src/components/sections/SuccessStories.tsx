@@ -7,7 +7,7 @@ const testimonials = [
     name: "Sarah Chen",
     role: "Software Engineer",
     company: "Google",
-    quote: "OPEN TO WORK helped me land my dream job at Google. The platform made it easy to connect with the right opportunities.",
+  quote: "OPENTOOWORK helped me land my dream job at Google. The platform made it easy to connect with the right opportunities.",
     initials: "SC"
   },
   {

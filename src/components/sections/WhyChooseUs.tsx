@@ -29,7 +29,7 @@ const WhyChooseUs = () => {
     <section className="py-20 bg-gradient-to-b from-background to-primary-light/20">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16 space-y-4">
-          <h2 className="text-4xl md:text-5xl font-bold">Why Choose OPEN TO WORK?</h2>
+          <h2 className="text-4xl md:text-5xl font-bold">Why Choose OPENTOOWORK?</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             A platform designed to help skilled talent build a successful career in the United States
           </p>
