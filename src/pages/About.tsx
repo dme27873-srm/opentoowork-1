@@ -2,15 +2,6 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import WhyChooseUs from "@/components/sections/WhyChooseUs";
 import HowItWorks from "@/components/sections/HowItWorks";
-import SuccessStories from "@/components/sections/SuccessStories";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-
-const team = [
-  { name: "Sanjeev Kumar", role: "Founder & CEO", initials: "SK" },
-  { name: "Aisha Gomez", role: "Head of Product", initials: "AG" },
-  { name: "Liam Wong", role: "Engineering Lead", initials: "LW" },
-  { name: "Priya Singh", role: "Community & Partnerships", initials: "PS" }
-];
 
 const About = () => {
   return (
