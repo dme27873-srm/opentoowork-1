@@ -5,7 +5,7 @@ import HeroSection from "@/components/sections/HeroSection";
 import WhyChooseUs from "@/components/sections/WhyChooseUs";
 import HowItWorks from "@/components/sections/HowItWorks";
 import SuccessStories from "@/components/sections/SuccessStories";
-import FloatingChat from "@/components/FloatingChat";
+// FloatingChat removed per request — chat widget disabled on this page
 import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -146,8 +146,7 @@ const Index = () => {
         </div>
       </section>
 
-      <Footer />
-      <FloatingChat />
+  <Footer />
     </div>
   );
 };

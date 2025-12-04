@@ -1,7 +1,7 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import JobCard from "@/components/JobCard";
-import FloatingChat from "@/components/FloatingChat";
+// FloatingChat removed per request — chat widget disabled on this page
 import { supabase } from "@/lib/supabase";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -126,8 +126,7 @@ const FindJobs = () => {
         )}
       </div>
 
-      <Footer />
-      <FloatingChat />
+  <Footer />
     </div>
   );
 };
