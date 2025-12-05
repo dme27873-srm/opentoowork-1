@@ -7,20 +7,21 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Briefcase, Mail } from "lucide-react";
+import { Briefcase, Mail, Globe } from "lucide-react";
 
 const EmployerAuth = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(false);
-  const [showOtpInput, setShowOtpInput] = useState(false); // New state for OTP view
+  const [showOtpInput, setShowOtpInput] = useState(false);
   
   const [companyName, setCompanyName] = useState("");
   const [location, setLocation] = useState("");
+  const [website, setWebsite] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [otp, setOtp] = useState(""); // New state for OTP
+  const [otp, setOtp] = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -28,31 +29,20 @@ const EmployerAuth = () => {
     });
   }, [navigate]);
 
-  // STEP 1: Sign Up (Triggers Email)
   const handleSignUp = async (e: any) => {
     e.preventDefault();
     setLoading(true);
-
     try {
-      // We pass the company details in 'options.data' so the Database Trigger
-      // can automatically create the employer_profile row.
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: {
-            role: "employer",
-            company_name: companyName,
-            location: location,
-          },
+          data: { role: "employer", company_name: companyName, location: location, company_website: website || null },
         },
       });
-
       if (error) throw error;
-
-      toast({ title: "Verification code sent to your email!" });
+      toast({ title: "Verification code sent!" });
       setShowOtpInput(true);
-
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
@@ -60,150 +50,72 @@ const EmployerAuth = () => {
     }
   };
 
-  // STEP 2: Verify OTP
   const handleVerifyOtp = async (e: any) => {
     e.preventDefault();
     setLoading(true);
-
     try {
-      const { error } = await supabase.auth.verifyOtp({
-        email,
-        token: otp,
-        type: 'signup',
-      });
-
+      const { error } = await supabase.auth.verifyOtp({ email, token: otp, type: 'signup' });
       if (error) throw error;
-
-      toast({ title: "Employer account verified!" });
+      toast({ title: "Verified!" });
       navigate("/dashboard");
-
     } catch (error: any) {
-      toast({
-        title: "Verification failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Verification failed", description: error.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
-  // Standard Login
   const handleSignIn = async (e: any) => {
     e.preventDefault();
     setLoading(true);
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Welcome back employer!" });
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      toast({ title: "Welcome back!" });
       navigate("/dashboard");
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <Card className="w-full max-w-md p-8 shadow-lg">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-slate-50">
+      <Card className="w-full max-w-md p-8 shadow-xl">
         <div className="flex flex-col items-center gap-3 mb-8">
-          {showOtpInput ? (
-            <Mail className="h-12 w-12 text-primary" />
-          ) : (
-            <Briefcase className="h-12 w-12 text-primary" />
-          )}
-          <h1 className="text-3xl font-bold">
-            {showOtpInput ? "Verify Email" : "Employer Portal"}
-          </h1>
-          <p className="text-muted-foreground text-center">
-            {showOtpInput 
-              ? `Enter the code sent to ${email}` 
-              : "Post jobs and hire talented candidates"}
-          </p>
+          {showOtpInput ? <Mail className="h-12 w-12 text-primary" /> : <Briefcase className="h-12 w-12 text-primary" />}
+          <h1 className="text-3xl font-bold text-slate-900">{showOtpInput ? "Verify Email" : "Employer Portal"}</h1>
         </div>
 
         {showOtpInput ? (
-          /* OTP Verification View */
           <form onSubmit={handleVerifyOtp} className="space-y-4">
             <Label>Verification Code</Label>
-            <Input 
-              value={otp} 
-              onChange={(e) => setOtp(e.target.value)} 
-              placeholder="123456"
-              className="text-center text-lg tracking-widest"
-              required 
-            />
-            <Button type="submit" disabled={loading} className="w-full">
-              {loading ? "Verifying..." : "Verify & Login"}
-            </Button>
-            <Button 
-              type="button" 
-              variant="ghost" 
-              className="w-full" 
-              onClick={() => setShowOtpInput(false)}
-            >
-              Back
-            </Button>
+            <Input value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="123456" className="text-center text-lg tracking-widest" required />
+            <Button type="submit" disabled={loading} className="w-full">{loading ? "Verifying..." : "Verify & Login"}</Button>
+            <Button type="button" variant="ghost" className="w-full" onClick={() => setShowOtpInput(false)}>Back</Button>
           </form>
         ) : (
-          /* Standard Tabs */
           <Tabs defaultValue="signin">
-            <TabsList className="grid grid-cols-2 mb-4">
+            <TabsList className="grid grid-cols-2 mb-6">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
             </TabsList>
-
             <TabsContent value="signin">
-              <form onSubmit={handleSignIn} className="space-y-3">
-                <Label>Email</Label>
-                <Input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-                <Label>Password</Label>
-                <Input
-                  type="password"
-                  required
-                  value={password}
-                  minLength={6}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-                <Button className="w-full" disabled={loading}>
-                  {loading ? "Signing in..." : "Sign In"}
-                </Button>
+              <form onSubmit={handleSignIn} className="space-y-4">
+                <div className="space-y-2"><Label>Email</Label><Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+                <div className="space-y-2"><Label>Password</Label><Input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} /></div>
+                <Button className="w-full" disabled={loading}>{loading ? "Signing in..." : "Sign In"}</Button>
               </form>
             </TabsContent>
-
             <TabsContent value="signup">
-              <form onSubmit={handleSignUp} className="space-y-3">
-                <Label>Company Name</Label>
-                <Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} required />
-
-                <Label>Company Location</Label>
-                <Input value={location} onChange={(e) => setLocation(e.target.value)} required />
-
-                <Label>Email</Label>
-                <Input type="email" value={email} required onChange={(e) => setEmail(e.target.value)} />
-
-                <Label>Password</Label>
-                <Input
-                  type="password"
-                  minLength={6}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-
-                <Button className="w-full" disabled={loading}>
-                  {loading ? "Sending Code..." : "Sign Up"}
-                </Button>
+              <form onSubmit={handleSignUp} className="space-y-4">
+                <div className="space-y-2"><Label>Company Name</Label><Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} required /></div>
+                <div className="space-y-2"><Label>Company Location</Label><Input value={location} onChange={(e) => setLocation(e.target.value)} required /></div>
+                <div className="space-y-2"><Label>Website (Optional)</Label><div className="relative"><Globe className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input value={website} onChange={(e) => setWebsite(e.target.value)} className="pl-9" /></div></div>
+                <div className="space-y-2"><Label>Email</Label><Input type="email" value={email} required onChange={(e) => setEmail(e.target.value)} /></div>
+                <div className="space-y-2"><Label>Password</Label><Input type="password" minLength={6} required value={password} onChange={(e) => setPassword(e.target.value)} /></div>
+                <Button className="w-full" disabled={loading}>{loading ? "Creating Account..." : "Sign Up"}</Button>
               </form>
             </TabsContent>
           </Tabs>

@@ -13,7 +13,7 @@ import JobDetail from "./pages/JobDetail";
 import NotFound from "./pages/NotFound";
 import FindJobs from "./pages/FindJobs";
 import AdminDashboard from "./pages/AdminDashboard";
-import AdminAuth from "./pages/AdminAuth"; // <--- Import
+import AdminAuth from "./pages/AdminAuth";
 
 const queryClient = new QueryClient();
 
@@ -29,12 +29,10 @@ const App = () => {
             <Route path="/jobs" element={<FindJobs />} />
             <Route path="/about" element={<About />} />
             
-            {/* Auth Routes */}
             <Route path="/candidate/auth" element={<CandidateAuth />} />
             <Route path="/employer/auth" element={<EmployerAuth />} />
-            <Route path="/admin/auth" element={<AdminAuth />} /> {/* <--- New Route */}
+            <Route path="/admin/auth" element={<AdminAuth />} />
 
-            {/* App Routes */}
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/jobs/:id" element={<JobDetail />} />
             <Route path="/admin" element={<AdminDashboard />} />

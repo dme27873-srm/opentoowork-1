@@ -7,7 +7,11 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
-    detectSessionInUrl: true,
+    // Disable auto-detection from URL fragments to avoid conflicts with HashRouter
+    // (when the app uses hash-based routing, Supabase parsing of the URL fragment
+    // can interfere with navigation on refresh). We rely on persisted session
+    // in local storage instead.
+    detectSessionInUrl: false,
     storageKey: "open_to_work_auth"
   }
 });
