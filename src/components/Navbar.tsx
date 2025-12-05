@@ -34,7 +34,7 @@ const Navbar = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
             <img
-              src="/assets/opentoowork-icon1.png"
+              src="/assets/opentoowork-icon1-BZ2bbVrF.png"
               alt="Opentoowork Logo"
               className="h-14 w-14 object-contain"
             />
