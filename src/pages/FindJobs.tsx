@@ -1,18 +1,22 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import JobCard from "@/components/JobCard";
-// FloatingChat removed per request — chat widget disabled on this page
 import { supabase } from "@/lib/supabase";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Search, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { withTimeout } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { restoreSessionFromBackup } from "@/lib/sessionStorage";
+import { useNavigate } from "react-router-dom";
 
 const FindJobs = () => {
+  const navigate = useNavigate();
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
   
-  // Search states
   const [searchTerm, setSearchTerm] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
 
@@ -20,39 +24,82 @@ const FindJobs = () => {
     fetchJobs();
   }, []);
 
-  const fetchJobs = async () => {
-    // Added .eq('is_active', true) to only show active jobs
-    const { data, error } = await supabase
-      .from("jobs")
-      .select(`
-        *,
-        employer:employer_profiles(company_name, location)
-      `)
-      .eq('is_active', true)
-      .order('created_at', { ascending: false });
+  // If loading stalls for > 8 seconds, attempt to restore session and redirect
+  useEffect(() => {
+    if (!loading) return;
 
-    if (!error) {
-      setJobs(data || []);
+    const timeout = setTimeout(() => {
+      console.warn("[FindJobs] Loading stalled for 8 seconds, attempting session recovery...");
+      if (restoreSessionFromBackup()) {
+        toast({
+          title: "Session Recovered",
+          description: "Your session was restored. Redirecting to dashboard...",
+        });
+        setTimeout(() => navigate("/dashboard"), 1500);
+      } else {
+        toast({
+          title: "Session Lost",
+          description: "Could not recover session. Please log in again.",
+          variant: "destructive",
+        });
+        // Redirect to login if recovery fails
+        setTimeout(() => navigate("/candidate/auth"), 2000);
+      }
+    }, 8000);
+
+    return () => clearTimeout(timeout);
+  }, [loading, navigate, toast]);
+
+  const fetchJobs = async () => {
+    try {
+      setLoading(true);
+      const query = supabase
+        .from("jobs")
+        .select(`
+          *,
+          employer:employer_profiles(company_name, location)
+        `)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      // Wrap the promise with a timeout (e.g., 5 seconds)
+      const { data, error } = await withTimeout(query.then((res) => res), 10000);
+
+      if (error) {
+        console.error("Error fetching jobs:", error);
+        toast({ 
+          title: "Error loading jobs", 
+          description: "Please refresh the page or try again later.",
+          variant: "destructive"
+        });
+      } else {
+        setJobs(data || []);
+      }
+    } catch (error) {
+      console.error("Fetch error or timeout:", error);
+      toast({ 
+        title: "Connection Timeout", 
+        description: "The request took too long. Please check your connection.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-  // Filter jobs based on search term and location (flexible matching)
   const filteredJobs = jobs.filter((job) => {
     const term = searchTerm.toLowerCase();
     const loc = locationFilter.toLowerCase();
 
-    // Check title, description, or company name for the keyword
     const matchesSearch =
       !term ||
-      job.title.toLowerCase().includes(term) ||
-      job.description.toLowerCase().includes(term) ||
-      job.employer?.company_name?.toLowerCase().includes(term);
+      (job.title || "").toLowerCase().includes(term) ||
+      (job.description || "").toLowerCase().includes(term) ||
+      (job.employer?.company_name || "").toLowerCase().includes(term);
 
-    // Check location
     const matchesLocation =
       !loc || 
-      job.location.toLowerCase().includes(loc);
+      (job.location || "").toLowerCase().includes(loc);
 
     return matchesSearch && matchesLocation;
   });
@@ -68,7 +115,6 @@ const FindJobs = () => {
             <p className="text-muted-foreground">Discover your next career move</p>
           </div>
 
-          {/* Search Inputs */}
           <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
             <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -93,7 +139,10 @@ const FindJobs = () => {
 
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <p className="text-lg text-muted-foreground animate-pulse">Loading opportunities...</p>
+            <div className="flex flex-col items-center gap-2">
+                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-lg text-muted-foreground">Loading opportunities...</p>
+            </div>
           </div>
         ) : filteredJobs.length === 0 ? (
           <div className="text-center py-20 bg-muted/30 rounded-xl border border-border/50">
@@ -113,7 +162,7 @@ const FindJobs = () => {
                 key={job.id}
                 id={job.id}
                 title={job.title}
-                company={job.employer?.company_name}
+                company={job.employer?.company_name || "Confidential"}
                 location={job.location}
                 salaryMin={job.salary_min}
                 salaryMax={job.salary_max}
@@ -126,7 +175,7 @@ const FindJobs = () => {
         )}
       </div>
 
-  <Footer />
+      <Footer />
     </div>
   );
 };

@@ -5,7 +5,6 @@ import HeroSection from "@/components/sections/HeroSection";
 import WhyChooseUs from "@/components/sections/WhyChooseUs";
 import HowItWorks from "@/components/sections/HowItWorks";
 import SuccessStories from "@/components/sections/SuccessStories";
-// FloatingChat removed per request — chat widget disabled on this page
 import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -23,35 +22,34 @@ const Index = () => {
   }, []);
 
   const fetchJobs = async () => {
-    setLoading(true);
-    let query = supabase
-      .from("jobs")
-      .select(`
-        *,
-        employer:employer_profiles(
-          company_name,
-          location
-        )
-      `)
-      .eq("is_active", true)
-      .order("created_at", { ascending: false });
+    try {
+      setLoading(true);
+      let query = supabase
+        .from("jobs")
+        .select(`
+          *,
+          employer:employer_profiles(
+            company_name,
+            location
+          )
+        `)
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
 
-    const { data, error } = await query;
+      const { data, error } = await query;
 
-    if (error) {
-      console.error("Error fetching jobs:", error);
-    } else {
-      setJobs(data || []);
+      if (error) {
+        console.error("Error fetching jobs:", error);
+      } else {
+        setJobs(data || []);
+      }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleSearch = () => {
-    // 1. Re-fetch is optional since we filter client-side, 
-    // but we can do it to ensure fresh data.
     fetchJobs(); 
-    
-    // 2. Scroll to the jobs section smoothly
     if (jobsSectionRef.current) {
       jobsSectionRef.current.scrollIntoView({ behavior: "smooth" });
     }
@@ -61,16 +59,16 @@ const Index = () => {
     const term = searchTerm.toLowerCase();
     const loc = locationFilter.toLowerCase();
 
-    // Check title, description, OR company name
-    const matchesSearch =
-      !term ||
-      job.title.toLowerCase().includes(term) ||
-      job.description.toLowerCase().includes(term) ||
-      job.employer?.company_name?.toLowerCase().includes(term);
+    // Check title, description, OR company name (Safe Access)
+    const titleMatch = (job.title || "").toLowerCase().includes(term);
+    const descMatch = (job.description || "").toLowerCase().includes(term);
+    const companyMatch = (job.employer?.company_name || "").toLowerCase().includes(term);
+
+    const matchesSearch = !term || titleMatch || descMatch || companyMatch;
     
     // Check location matches
-    const matchesLocation =
-      !loc || job.location.toLowerCase().includes(loc);
+    const locationMatch = (job.location || "").toLowerCase().includes(loc);
+    const matchesLocation = !loc || locationMatch;
     
     return matchesSearch && matchesLocation;
   });
@@ -84,9 +82,7 @@ const Index = () => {
         setSearchTerm={setSearchTerm}
         locationFilter={locationFilter}
         setLocationFilter={setLocationFilter}
-        // Use our new handler that includes scrolling
         onSearch={handleSearch}
-        // Pass dummy props for unused interface requirements if any
         visaFilter=""
         setVisaFilter={() => {}}
       />
@@ -146,7 +142,7 @@ const Index = () => {
         </div>
       </section>
 
-  <Footer />
+      <Footer />
     </div>
   );
 };
