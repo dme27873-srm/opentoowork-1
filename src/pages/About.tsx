@@ -1,21 +1,57 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import WhyChooseUs from "@/components/sections/WhyChooseUs";
 import HowItWorks from "@/components/sections/HowItWorks";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const About = () => {
+  const [content, setContent] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchContent = async () => {
+      const { data, error } = await supabase
+        .from("site_content")
+        .select("content")
+        .eq("section_key", "about_page")
+        .single();
+
+      if (data?.content) {
+        setContent(data.content);
+      }
+      setLoading(false);
+    };
+
+    fetchContent();
+  }, []);
+
+  const heroTitle = content?.hero_title || "About OPENTOOWORK";
+  const heroDesc = content?.hero_description || "OPENTOOWORK connects talented professionals with meaningful career opportunities across the United States. Our mission is to simplify the job search and make hiring faster and fairer for everyone.";
+  const missionTitle = content?.mission_title || "Our Mission";
+  const missionBody = content?.mission_body || "We believe every skilled candidate deserves access to opportunities that match their ambitions. OPENTOOWORK builds tools that help candidates showcase skills and connect with verified employers quickly and transparently.";
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Navbar />
 
       <header className="py-24 bg-gradient-to-b from-primary-light/10 to-background">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl md:text-5xl font-extrabold mb-4">About OPENTOOWORK</h1>
-          <p className="max-w-3xl mx-auto text-lg text-muted-foreground">
-            OPENTOOWORK connects talented professionals with meaningful career opportunities across the
-            United States. Our mission is to simplify the job search and make hiring faster and fairer for
-            everyone.
-          </p>
+          {loading ? (
+            <div className="space-y-4 flex flex-col items-center">
+              <Skeleton className="h-12 w-3/4 md:w-1/2" />
+              <Skeleton className="h-4 w-full md:w-2/3" />
+              <Skeleton className="h-4 w-5/6 md:w-1/2" />
+            </div>
+          ) : (
+            <>
+              <h1 className="text-4xl md:text-5xl font-extrabold mb-4 animate-fade-in">{heroTitle}</h1>
+              <p className="max-w-3xl mx-auto text-lg text-muted-foreground whitespace-pre-wrap animate-fade-in delay-100">
+                {heroDesc}
+              </p>
+            </>
+          )}
         </div>
       </header>
 
@@ -25,12 +61,19 @@ const About = () => {
         <section className="py-20 bg-background">
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold">Our Mission</h2>
-              <p className="text-muted-foreground max-w-2xl mx-auto mt-4">
-                We believe every skilled candidate deserves access to opportunities that match their
-                ambitions. OPENTOOWORK builds tools that help candidates showcase skills and connect with
-                verified employers quickly and transparently.
-              </p>
+              {loading ? (
+                <div className="space-y-4 flex flex-col items-center">
+                  <Skeleton className="h-8 w-1/4" />
+                  <Skeleton className="h-20 w-2/3" />
+                </div>
+              ) : (
+                <>
+                  <h2 className="text-3xl md:text-4xl font-bold">{missionTitle}</h2>
+                  <p className="text-muted-foreground max-w-2xl mx-auto mt-4 whitespace-pre-wrap">
+                    {missionBody}
+                  </p>
+                </>
+              )}
             </div>
 
             <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
@@ -76,7 +119,7 @@ const About = () => {
         </section>
       </main>
 
-  <Footer />
+      <Footer />
     </div>
   );
 };
