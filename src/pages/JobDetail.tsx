@@ -9,17 +9,23 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import { MapPin, Building2, DollarSign, Briefcase, Calendar } from "lucide-react";
+import { MapPin, Building2, DollarSign, Briefcase, Calendar, Lock, CheckCircle2 } from "lucide-react";
+import { ToastAction } from "@/components/ui/toast";
 
 const JobDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  
   const [job, setJob] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isApplying, setIsApplying] = useState(false);
   const [coverLetter, setCoverLetter] = useState("");
+  const [hasApplied, setHasApplied] = useState(false);
+  
+  // User state
   const [user, setUser] = useState<any>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [candidateProfile, setCandidateProfile] = useState<any>(null);
 
   useEffect(() => {
@@ -32,21 +38,44 @@ const JobDetail = () => {
     if (session) {
       setUser(session.user);
       
+      // Fetch role
       const { data: profile } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", session.user.id)
         .single();
 
-      if (profile?.role === "candidate") {
-        const { data: candidateData } = await supabase
-          .from("candidate_profiles")
-          .select("*")
-          .eq("user_id", session.user.id)
-          .single();
+      if (profile) {
+        setUserRole(profile.role);
         
-        setCandidateProfile(candidateData);
+        // If candidate, fetch candidate profile and check application status
+        if (profile.role === "candidate") {
+          const { data: candidateData } = await supabase
+            .from("candidate_profiles")
+            .select("*")
+            .eq("user_id", session.user.id)
+            .single();
+          
+          setCandidateProfile(candidateData);
+
+          if (candidateData && id) {
+            checkApplicationStatus(candidateData.id, id);
+          }
+        }
       }
+    }
+  };
+
+  const checkApplicationStatus = async (candidateId: string, jobId: string) => {
+    const { data } = await supabase
+      .from("applications")
+      .select("id")
+      .eq("job_id", jobId)
+      .eq("candidate_id", candidateId)
+      .single();
+    
+    if (data) {
+      setHasApplied(true);
     }
   };
 
@@ -85,11 +114,26 @@ const JobDetail = () => {
       return;
     }
 
-    if (!candidateProfile) {
+    if (userRole !== "candidate" || !candidateProfile) {
       toast({
-        title: "Error",
+        title: "Access Denied",
         description: "Only candidates can apply for jobs",
         variant: "destructive",
+      });
+      return;
+    }
+
+    // CHECK FOR RESUME
+    if (!candidateProfile.resume_url) {
+      toast({
+        title: "Resume Required",
+        description: "You must upload a resume to your profile before applying.",
+        variant: "destructive",
+        action: (
+          <ToastAction altText="Go to Dashboard" onClick={() => navigate("/dashboard")}>
+            Go to Dashboard
+          </ToastAction>
+        ),
       });
       return;
     }
@@ -102,18 +146,25 @@ const JobDetail = () => {
         cover_letter: coverLetter,
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === '23505') {
+          setHasApplied(true);
+          throw new Error("You have already applied to this job.");
+        }
+        throw error;
+      }
 
       toast({
         title: "Application submitted!",
         description: "Good luck with your application!",
       });
+      setHasApplied(true);
       setCoverLetter("");
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: "Info",
         description: error.message,
-        variant: "destructive",
+        variant: error.code === '23505' ? "default" : "destructive",
       });
     } finally {
       setIsApplying(false);
@@ -141,6 +192,8 @@ const JobDetail = () => {
       </div>
     );
   }
+
+  const isRestrictedUser = userRole === 'admin' || userRole === 'employer';
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-primary-light/10">
@@ -216,37 +269,64 @@ const JobDetail = () => {
                 </div>
               )}
 
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button size="lg" className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 shadow-lg text-lg h-14">
-                    Apply Now
+              {/* === ACTION AREA === */}
+              
+              {isRestrictedUser ? (
+                // 1. Restricted View for Admin/Employer
+                <div className="flex flex-col items-center justify-center p-6 bg-muted/30 rounded-xl border border-border border-dashed">
+                  <Lock className="h-8 w-8 text-muted-foreground mb-2" />
+                  <p className="text-lg font-semibold text-foreground">
+                    {userRole === 'admin' ? "Administrator View" : "Employer View"}
+                  </p>
+                  <p className="text-muted-foreground text-sm">
+                    Job applications are disabled for your account type.
+                  </p>
+                </div>
+              ) : hasApplied ? (
+                // 2. Already Applied State
+                <div className="w-full">
+                  <Button size="lg" disabled className="w-full bg-success/80 hover:bg-success/80 text-white h-14 text-lg">
+                    <CheckCircle2 className="mr-2 h-5 w-5" />
+                    Applied
                   </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Apply for {job.title}</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="coverletter">Cover Letter (Optional)</Label>
-                      <Textarea
-                        id="coverletter"
-                        value={coverLetter}
-                        onChange={(e) => setCoverLetter(e.target.value)}
-                        rows={6}
-                        placeholder="Tell the employer why you're a great fit..."
-                      />
-                    </div>
-                    <Button 
-                      onClick={handleApply} 
-                      disabled={isApplying}
-                      className="w-full"
-                    >
-                      {isApplying ? "Submitting..." : "Submit Application"}
+                  <p className="text-center text-sm text-muted-foreground mt-2">
+                    You submitted your application on {new Date().toLocaleDateString()}
+                  </p>
+                </div>
+              ) : (
+                // 3. Apply Button (Candidates Only)
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button size="lg" className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 shadow-lg text-lg h-14">
+                      Apply Now
                     </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Apply for {job.title}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="coverletter">Cover Letter (Optional)</Label>
+                        <Textarea
+                          id="coverletter"
+                          value={coverLetter}
+                          onChange={(e) => setCoverLetter(e.target.value)}
+                          rows={6}
+                          placeholder="Tell the employer why you're a great fit..."
+                        />
+                      </div>
+                      <Button 
+                        onClick={handleApply} 
+                        disabled={isApplying}
+                        className="w-full"
+                      >
+                        {isApplying ? "Submitting..." : "Submit Application"}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
             </div>
           </Card>
         </div>

@@ -4,8 +4,6 @@ import JobCard from "@/components/JobCard";
 import HeroSection from "@/components/sections/HeroSection";
 import WhyChooseUs from "@/components/sections/WhyChooseUs";
 import HowItWorks from "@/components/sections/HowItWorks";
-import SuccessStories from "@/components/sections/SuccessStories";
-// FloatingChat removed per request — chat widget disabled on this page
 import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -93,7 +91,7 @@ const Index = () => {
 
       <WhyChooseUs />
       <HowItWorks />
-      <SuccessStories />
+      {/* SuccessStories removed */}
 
       {/* Jobs Listing Section with Ref */}
       <section 
@@ -146,7 +144,7 @@ const Index = () => {
         </div>
       </section>
 
-  <Footer />
+      <Footer />
     </div>
   );
 };

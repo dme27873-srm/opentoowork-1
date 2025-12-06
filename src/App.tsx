@@ -5,9 +5,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 
 import Index from "./pages/Index";
-import About from "./pages/About"; // <--- ADD THIS PAGE
+import About from "./pages/About";
 import CandidateAuth from "./pages/CandidateAuth";
 import EmployerAuth from "./pages/EmployerAuth";
+import AdminAuth from "./pages/AdminAuth"; // <--- Import AdminAuth
 import Dashboard from "./pages/Dashboard";
 import JobDetail from "./pages/JobDetail";
 import NotFound from "./pages/NotFound";
@@ -28,6 +29,7 @@ const App = () => {
             <Route path="/about" element={<About />} />
             <Route path="/candidate/auth" element={<CandidateAuth />} />
             <Route path="/employer/auth" element={<EmployerAuth />} />
+            <Route path="/admin/auth" element={<AdminAuth />} /> {/* <--- Add Route */}
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/jobs/:id" element={<JobDetail />} />
             <Route path="*" element={<NotFound />} />

@@ -4,25 +4,38 @@ import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import CandidateDashboard from "@/components/CandidateDashboard";
 import EmployerDashboard from "@/components/EmployerDashboard";
+import AdminDashboard from "@/components/AdminDashboard";
+import { Loader2 } from "lucide-react";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [userRole, setUserRole] = useState<"candidate" | "employer" | null>(null);
+  const [userRole, setUserRole] = useState<"candidate" | "employer" | "admin" | null>(null);
 
   useEffect(() => {
     checkUser();
-  }, []);
+
+    // Listen for auth events (e.g. SIGNED_OUT)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        // Redirect to home if logged out
+        navigate("/");
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
 
   const checkUser = async () => {
     const { data: { session } } = await supabase.auth.getSession();
 
     if (!session) {
-      navigate("/candidate/auth");
+      navigate("/");
       return;
     }
 
-    // Fetch the user's role from the 'profiles' table
     const { data: profile, error } = await supabase
       .from("profiles")
       .select("role")
@@ -31,7 +44,8 @@ const Dashboard = () => {
 
     if (error || !profile) {
       console.error("Error fetching profile:", error);
-      // Optional: Handle error (e.g., logout or show error)
+      // If we have a session but no profile, something is wrong.
+      // Optionally sign out or show error.
     } else {
       setUserRole(profile.role);
     }
@@ -41,8 +55,8 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Loading...</p>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -50,9 +64,10 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container mx-auto py-6">
+      <div className="py-6">
         {userRole === "candidate" && <CandidateDashboard />}
         {userRole === "employer" && <EmployerDashboard />}
+        {userRole === "admin" && <AdminDashboard />} 
       </div>
     </div>
   );

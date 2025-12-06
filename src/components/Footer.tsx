@@ -1,115 +1,161 @@
 import { Link } from "react-router-dom";
-import { Briefcase, Facebook, Linkedin, Twitter, Instagram } from "lucide-react";
+import { Briefcase, Facebook, Linkedin, Twitter, Instagram, Mail, Phone } from "lucide-react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 const Footer = () => {
+  const [content, setContent] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchContent = async () => {
+      const { data } = await supabase
+        .from("site_content")
+        .select("content")
+        .eq("section_key", "about_page")
+        .single();
+      
+      if (data?.content) {
+        setContent(data.content);
+      }
+    };
+    fetchContent();
+  }, []);
+
+  const hasSocials = content?.social_linkedin || content?.social_twitter || content?.social_facebook || content?.social_instagram;
+  const hasContact = content?.contact_email || content?.contact_phone;
+
   return (
-    <footer className="bg-gradient-to-br from-primary/5 to-accent/5 border-t border-border/50 py-12">
+    <footer className="bg-background border-t border-border/50 pt-16 pb-8">
       <div className="container mx-auto px-4">
-        <div className="grid md:grid-cols-4 gap-8 mb-8">
-          {/* Brand Section */}
-          <div className="space-y-4">
+        {/* Adaptive Layout: Flex wrapping with space-between handles missing columns gracefully */}
+        <div className="flex flex-wrap justify-between gap-10 md:gap-8 mb-12">
+          
+          {/* 1. Brand Section */}
+          <div className="space-y-6 max-w-xs w-full md:w-auto">
             <Link to="/" className="flex items-center gap-3 group">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <Briefcase className="h-6 w-6 text-primary-foreground" />
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md">
+                <Briefcase className="h-5 w-5 text-white" />
               </div>
-              <span className="font-bold text-xl bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              <span className="font-bold text-xl tracking-tight">
                 OPENTOOWORK
               </span>
             </Link>
-            <p className="text-muted-foreground text-sm">
-              Connecting students and job seekers with their dream careers across the USA.
+            <p className="text-muted-foreground text-sm leading-relaxed max-w-xs">
+              {content?.hero_description || "Connecting skilled professionals with top employers across the United States. Your next career move starts here."}
             </p>
           </div>
 
-          {/* Quick Links */}
-          <div>
-            <h4 className="font-semibold text-foreground mb-4">Company</h4>
-            <ul className="space-y-2">
+          {/* 2. Platform Links */}
+          <div className="min-w-[140px]">
+            <h4 className="font-semibold text-foreground mb-6">Platform</h4>
+            <ul className="space-y-3 text-sm">
               <li>
-                <Link to="/" className="text-muted-foreground hover:text-primary transition-colors text-sm">
+                <Link to="/jobs" className="text-muted-foreground hover:text-primary transition-colors">
+                  Browse Jobs
+                </Link>
+              </li>
+              <li>
+                <Link to="/about" className="text-muted-foreground hover:text-primary transition-colors">
                   About Us
                 </Link>
               </li>
               <li>
-                <Link to="/" className="text-muted-foreground hover:text-primary transition-colors text-sm">
-                  Contact
+                <Link to="/employer/auth" className="text-muted-foreground hover:text-primary transition-colors">
+                  For Employers
                 </Link>
               </li>
               <li>
-                <Link to="/" className="text-muted-foreground hover:text-primary transition-colors text-sm">
-                  Careers
+                <Link to="/candidate/auth" className="text-muted-foreground hover:text-primary transition-colors">
+                  For Candidates
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Legal */}
-          <div>
-            <h4 className="font-semibold text-foreground mb-4">Legal</h4>
-            <ul className="space-y-2">
-              <li>
-                <Link to="/" className="text-muted-foreground hover:text-primary transition-colors text-sm">
-                  Privacy Policy
-                </Link>
-              </li>
-              <li>
-                <Link to="/" className="text-muted-foreground hover:text-primary transition-colors text-sm">
-                  Terms of Service
-                </Link>
-              </li>
-              <li>
-                <Link to="/" className="text-muted-foreground hover:text-primary transition-colors text-sm">
-                  Cookie Policy
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Social Media */}
-          <div>
-            <h4 className="font-semibold text-foreground mb-4">Follow Us</h4>
-            <div className="flex gap-3">
-              <a
-                href="https://facebook.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 rounded-lg bg-primary/10 hover:bg-primary hover:text-primary-foreground flex items-center justify-center transition-all"
-              >
-                <Facebook className="h-5 w-5" />
-              </a>
-              <a
-                href="https://linkedin.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 rounded-lg bg-primary/10 hover:bg-primary hover:text-primary-foreground flex items-center justify-center transition-all"
-              >
-                <Linkedin className="h-5 w-5" />
-              </a>
-              <a
-                href="https://twitter.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 rounded-lg bg-primary/10 hover:bg-primary hover:text-primary-foreground flex items-center justify-center transition-all"
-              >
-                <Twitter className="h-5 w-5" />
-              </a>
-              <a
-                href="https://instagram.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 rounded-lg bg-primary/10 hover:bg-primary hover:text-primary-foreground flex items-center justify-center transition-all"
-              >
-                <Instagram className="h-5 w-5" />
-              </a>
+          {/* 3. Contact (Conditional) */}
+          {hasContact && (
+            <div className="min-w-[200px]">
+              <h4 className="font-semibold text-foreground mb-6">Contact</h4>
+              <ul className="space-y-3 text-sm">
+                {content?.contact_email && (
+                  <li>
+                    <a href={`mailto:${content.contact_email}`} className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
+                      <Mail className="h-4 w-4" /> {content.contact_email}
+                    </a>
+                  </li>
+                )}
+                
+                {content?.contact_phone && (
+                  <li>
+                    <a href={`tel:${content.contact_phone}`} className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
+                      <Phone className="h-4 w-4" /> {content.contact_phone}
+                    </a>
+                  </li>
+                )}
+              </ul>
             </div>
-          </div>
+          )}
+
+          {/* 4. Social Media (Conditional) */}
+          {hasSocials && (
+            <div className="min-w-[140px]">
+              <h4 className="font-semibold text-foreground mb-6">Follow Us</h4>
+              <div className="flex gap-3">
+                {content.social_linkedin && (
+                  <a 
+                    href={content.social_linkedin} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 hover:text-primary flex items-center justify-center transition-all text-muted-foreground"
+                  >
+                    <Linkedin className="h-5 w-5" />
+                  </a>
+                )}
+                
+                {content.social_twitter && (
+                  <a 
+                    href={content.social_twitter} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 hover:text-primary flex items-center justify-center transition-all text-muted-foreground"
+                  >
+                    <Twitter className="h-5 w-5" />
+                  </a>
+                )}
+                
+                {content.social_facebook && (
+                  <a 
+                    href={content.social_facebook} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 hover:text-primary flex items-center justify-center transition-all text-muted-foreground"
+                  >
+                    <Facebook className="h-5 w-5" />
+                  </a>
+                )}
+                
+                {content.social_instagram && (
+                  <a 
+                    href={content.social_instagram} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 hover:text-primary flex items-center justify-center transition-all text-muted-foreground"
+                  >
+                    <Instagram className="h-5 w-5" />
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Copyright */}
-        <div className="pt-8 border-t border-border/50 text-center">
-          <p className="text-muted-foreground text-sm">
-            © {new Date().getFullYear()} OPENTOOWORK. All rights reserved.
-          </p>
+        {/* Footer Bottom */}
+        <div className="pt-8 border-t border-border/50 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
+          <p>© {new Date().getFullYear()} OPENTOOWORK. All rights reserved.</p>
+          <div className="flex gap-6">
+            <Link to="/" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+            <Link to="/" className="hover:text-foreground transition-colors">Terms of Service</Link>
+          </div>
         </div>
       </div>
     </footer>
