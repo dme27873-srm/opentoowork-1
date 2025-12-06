@@ -15,13 +15,13 @@ const CandidateAuth = () => {
 
   const [loading, setLoading] = useState(false);
   const [isSignup, setIsSignup] = useState(false);
-  const [showOtpInput, setShowOtpInput] = useState(false); // New state for OTP view
+  const [showOtpInput, setShowOtpInput] = useState(false);
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [otp, setOtp] = useState(""); // New state for OTP input
+  const [otp, setOtp] = useState("");
 
   useEffect(() => {
     const checkRole = async () => {
@@ -45,10 +45,20 @@ const CandidateAuth = () => {
   // STEP 1: Sign Up (Triggers Email)
   const handleSignUp = async (e: any) => {
     e.preventDefault();
+    
+    // Validate Phone Number for Country Code
+    if (!phone.startsWith("+")) {
+      toast({
+        title: "Invalid Phone Number",
+        description: "Please include your country code (e.g., +1 for USA).",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
-      // Pass metadata so the Database Trigger can create the profile
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -63,7 +73,6 @@ const CandidateAuth = () => {
 
       if (error) throw error;
 
-      // Success! Now show OTP input
       toast({ title: "Verification code sent to your email!" });
       setShowOtpInput(true); 
 
@@ -200,8 +209,18 @@ const CandidateAuth = () => {
                 <Input required value={fullName} onChange={(e) => setFullName(e.target.value)} />
                 <Label>Email</Label>
                 <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-                <Label>Phone</Label>
-                <Input type="tel" placeholder="+1 555 123 4567" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                
+                <div className="space-y-1">
+                  <Label>Phone <span className="text-muted-foreground text-xs font-normal">(with Country Code)</span></Label>
+                  <Input 
+                    type="tel" 
+                    placeholder="+1 555 123 4567" 
+                    value={phone} 
+                    onChange={(e) => setPhone(e.target.value)} 
+                    required
+                  />
+                </div>
+
                 <Label>Password</Label>
                 <Input type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
                 <Button type="submit" disabled={loading} className="w-full">
